@@ -1,0 +1,12 @@
+input:
+  metadata: '/path/to/metadata/file'
+  gex_reference: '/path/to/10X/gex_reference'
+  vdj_reference: '/path/to/10X/vdj_reference'
+  feature_reference: '/path/to/10X/feature_reference'
+  fastq_path: ['/path/to/fastq/folders/from/cellranger/mkfastq']
+  study_id: 'study_id'
+  h5paths: "/path/to/h5/files"
+  script_path: '/full/path/to/scripts/folder/in/scrna_seq_piepline'
+
+output:
+  folder: '/path/to/output/folder'

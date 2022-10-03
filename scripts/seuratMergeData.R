@@ -10,22 +10,27 @@ option_list <- list(
                 dest="study_id")
 )
 parser <- parse_args(OptionParser(option_list=option_list), print_help_and_exit = TRUE)
-
+# Load in Seurat object and run SCTranform to scale and normalize each samples
 readCountObject <- function(h5_path) {
-    print(h5_path)
     h5_object <- SeuratDisk::LoadH5Seurat(h5_path)
-    h5_object <- NormalizeData(h5_object)
-    h5_object <- FindVariableFeatures(h5_object, selection.method = "vst", nfeatures = 2000)
+    h5_object <- subset(x = h5_object, subset = discard == FALSE)
+    h5_object <- Seurat::SCTransform(h5_object, assay = "RNA", 
+        vars.to.regress = "subsets_Mito_percent", verbose = FALSE)
     return(h5_object)
 }
-
+    # Scale data and run PCA on each seurat object
+# Note: When integrating public datasets, this step can fail on low quality
+# runs. Adjusting the npcs can be one solution in such cases
 runPCA <- function(h5_object, features) {
-    print(h5_object)
-    h5_object <- Seurat::ScaleData(h5_object, features = features, 
-        verbose = FALSE)
-    h5_object <- Seurat::RunPCA(h5_object, features = features, verbose = FALSE)
+    h5_object <- ScaleData(h5_object, features = features, verbose = FALSE)
+    h5_object <- RunPCA(h5_object, features = features, verbose = FALSE, npcs = 30)
     return(h5_object)
-}   
+}
+# Set SCT as the default assay for integration
+setDefaultAssay <- function(h5_object) {
+    DefaultAssay(h5_object) <- "SCT"
+    return(h5_object)
+}
 
 h5_list <- base::list.files(path = "./",
         pattern = "h5Seurat",
@@ -34,17 +39,19 @@ h5_list <- base::list.files(path = "./",
 
 features <- Seurat::SelectIntegrationFeatures(object.list = h5_list)
 h5_list <- h5_list %>% 
-    purrr::map(~runPCA(.x, features = features ))
+    purrr::map(~runPCA(.x, features))
 
-anchors <- Seurat::FindIntegrationAnchors(object.list = h5_list, anchor.features = features, 
-    reference = c(1,2), reduction = "rpca", dims = 1:50)
+anchors <- Seurat::FindIntegrationAnchors(object.list = h5_list, 
+    anchor.features = features, reduction = "rpca", l2.norm = FALSE)
 
-intergrated_object <- Seurat::IntegrateData(anchorset = anchors, dims = 1:50)
+intergrated_object <- Seurat::IntegrateData(anchorset = anchors)
 intergrated_object <- Seurat::ScaleData(intergrated_object, verbose = FALSE)
 intergrated_object <- Seurat::RunPCA(intergrated_object, verbose = FALSE)
-intergrated_object <- Seurat::RunUMAP(intergrated_object, dims = 1:50, reduction = "pca")
+intergrated_object <- Seurat::RunUMAP(intergrated_object, dims = 1:30, 
+    reduction = "pca")
 
 output_path <- base::paste(parser$study_id, "merged_object.h5Seurat", sep = "_")
-SeuratDisk::SaveH5Seurat(object = intergrated_object, filename = output_path, overwrite = TRUE)
+SeuratDisk::SaveH5Seurat(object = intergrated_object, 
+    filename = output_path, overwrite = TRUE)
 
 

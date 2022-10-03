@@ -53,20 +53,19 @@ ftable <- fastq_list %>%
 ctable <- dplyr::left_join(mtable, ftable, by = "repoName") %>%
     dplyr::mutate(feature_types = case_when(locus == "5primeGEX" & is.na(VDJType) ~ "Gene Expression",
         locus == "5primeVDJ" & VDJType == "T-cell" ~ "VDJ-T"),
-        lanes = "1|2",
         subsample_rate = "") %>%
-    dplyr::select(repoName, sampleName, feature_types, lanes, fastqs, subsample_rate) %>%
+    dplyr::select(repoName, sampleName, feature_types, fastqs, subsample_rate) %>%
     dplyr::rename(fastq_id = repoName)
 
 prepMulti <- function(ctable, gref, vref, ecell) {
     sample <- ctable %>% pull(sampleName) %>% unique()
     ctable <- ctable %>%
-        select(fastq_id, fastqs, lanes, feature_types, subsample_rate)
+        select(fastq_id, fastqs, feature_types, subsample_rate)
     out_path <- paste(sample,  "config.csv", sep = "_")
     file_conn <- file(out_path)
     line_vector <- c("[gene-expression]",
         paste("reference", tools::file_path_as_absolute(gref), sep=","),
-        paste("chemistry", 'fiveprime', sep=","), 
+        paste("chemistry", 'auto', sep=","), 
         paste("expect-cells", ecell, sep=","),
         "[vdj]",
         paste("reference", tools::file_path_as_absolute(vref), sep=","),

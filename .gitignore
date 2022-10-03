@@ -1,0 +1,4 @@
+#Ignore params
+params
+#Ignore nextflow logs
+.nextflow*

@@ -14,11 +14,11 @@ parser <- parse_args(OptionParser(option_list=option_list), print_help_and_exit 
 readCountObject <- function(h5_path) {
     h5_object <- SeuratDisk::LoadH5Seurat(h5_path)
     h5_object <- subset(x = h5_object, subset = discard == FALSE)
-    h5_object <- Seurat::SCTransform(h5_object, assay = "RNA", 
+    h5_object <- Seurat::SCTransform(h5_object, assay = "originalexp", 
         vars.to.regress = "subsets_Mito_percent", verbose = FALSE)
     return(h5_object)
 }
-    # Scale data and run PCA on each seurat object
+# Scale data and run PCA on each seurat object
 # Note: When integrating public datasets, this step can fail on low quality
 # runs. Adjusting the npcs can be one solution in such cases
 runPCA <- function(h5_object, features) {
@@ -32,7 +32,7 @@ setDefaultAssay <- function(h5_object) {
     return(h5_object)
 }
 
-h5_list <- base::list.files(path = "./",
+h5_list <- base::list.files(path = "/data/KS/preprocess/object/",
         pattern = "h5Seurat",
         full.names = TRUE) %>% 
     purrr::map(readCountObject) 
@@ -41,10 +41,13 @@ features <- Seurat::SelectIntegrationFeatures(object.list = h5_list)
 h5_list <- h5_list %>% 
     purrr::map(~runPCA(.x, features))
 
-anchors <- Seurat::FindIntegrationAnchors(object.list = h5_list, 
-    anchor.features = features, reduction = "rpca", l2.norm = FALSE)
+h5_list <- PrepSCTIntegration(h5_list, anchor.features = features)
 
-intergrated_object <- Seurat::IntegrateData(anchorset = anchors)
+anchors <- Seurat::FindIntegrationAnchors(object.list = h5_list, 
+    normalization.method = "SCT", reduction = "rpca",
+    anchor.features = features)
+
+intergrated_object <- Seurat::IntegrateData(anchorset = anchors, dims = 1:30)
 intergrated_object <- Seurat::ScaleData(intergrated_object, verbose = FALSE)
 intergrated_object <- Seurat::RunPCA(intergrated_object, verbose = FALSE)
 intergrated_object <- Seurat::RunUMAP(intergrated_object, dims = 1:30, 

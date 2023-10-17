@@ -42,7 +42,7 @@ process runCellranger {
   label 'high_mem'
   publishDir "$params.output.folder/summaries/", mode : "copy", pattern : "*.html"
   publishDir "$params.output.folder/matrices/", mode : "copy", pattern : "*.h5"
-  publishDir "$params.output.folder/${meta_row.Batch}/${meta_row.sampleName}/", mode : "copy", pattern : "*.tar.gz"
+  publishDir "$params.output.folder/${meta_row.Batch}/", mode : "copy", pattern : "${meta_row.sampleName}"
   input:
     each meta_row
     path fastq_path
@@ -50,7 +50,7 @@ process runCellranger {
     path vdj_reference
     val study_id
   output:
-    path "*.tar.gz", emit: cellranger_out
+    path "${meta_row.sampleName}", type: dir, emit: cellranger_out
     path "*.html"
     path "*.h5"
   script:
@@ -64,7 +64,7 @@ process runCellranger {
         --sample=${library} --expect-cells=$meta_row.expected_cells \
         --localcores=6 --localmem=120 --chemistry=SC5P-R2
 
-      tar -czf ${sample}_counts.tar.gz ./${sample}/*  
+      #tar -czf ${sample}_counts.tar.gz ./${sample}/*  
       cp ${sample}/outs/web_summary.html ${sample}.html 
       cp ${sample}/outs/filtered_feature_bc_matrix.h5 ${sample}_filterd.h5
       """
@@ -74,7 +74,7 @@ process runCellranger {
         --fastqs=$meta_row.Batch/outs/fastq_path/$meta_row.Batch \
         --sample=$meta_row.repoName --localcores=6 --localmem=120
 
-      tar -czf "$meta_row.sampleName"_vdj.tar.gz ./$meta_row.sampleName/*  
+      #tar -czf "$meta_row.sampleName"_vdj.tar.gz ./$meta_row.sampleName/*  
       """
 }
 
@@ -82,8 +82,10 @@ process runCellranger {
 
 
 process prepCellranger {
-  container "$params.sctools"
+  module "R"
   label 'low_mem'
+  errorStrategy 'retry'
+  cache true
   publishDir "$params.output.folder/config/multi_config/", mode : "copy", pattern : "*_config.csv"
   publishDir "$params.output.folder/config/", mode : "copy", pattern : "multi_config.tsv"
   input:
@@ -98,15 +100,16 @@ process prepCellranger {
     path "*_config.csv", emit: config_files
   script:
   """
-  Rscript scripts/prepCellranger.R -m ${metadata.join(',')} -g ${gex_reference} -v ${vdj_reference} -s ${study_id} -f ${fastq_path.join(',')} 
+  /app/software/R/4.2.2-foss-2021b/bin/Rscript ${script_path}/prepCellranger.R -m ${metadata.join(',')} -g ${gex_reference} -v ${vdj_reference} -s ${study_id} -f ${fastq_path.join(',')} 
   """
 }
 
 process cellrangerMulti {
   container "$params.sctools"
   label 'high_mem'
-  publishDir "$params.output.folder/cellranger/gex/$multi_sample.sample_name/", mode : "copy", pattern : "*counts.tar.gz"
-  publishDir "$params.output.folder/cellranger/vdj/$multi_sample.sample_name/", mode : "copy", pattern : "*vdj.tar.gz"
+  errorStrategy 'retry'
+  publishDir "$params.output.folder/cellranger/gex/", mode : "copy", pattern : "${multi_sample.sample_name}"
+  publishDir "$params.output.folder/cellranger/vdj/", mode : "copy", pattern : "${multi_sample.sample_name}"
   publishDir "$params.output.folder/cellranger/summaries/", mode : "copy", pattern : "${multi_sample.sample_name}.html"
   publishDir "$params.output.folder/cellranger/vdj/airr/$multi_sample.sample_name/", mode : "copy", pattern : "${multi_sample.sample_name}_airr.tsv"
   publishDir "$params.output.folder/cellranger/vdj/screpertoire/$multi_sample.sample_name/", mode : "copy", pattern : "${multi_sample.sample_name}_contig_annotations.csv"
@@ -120,8 +123,8 @@ process cellrangerMulti {
     path script_path
   output:
     val "${sample}", emit: sample_list
-    path "${multi_sample.sample_name}_counts.tar.gz", emit: count_list
-    path "${multi_sample.sample_name}_vdj.tar.gz", emit: vdj_list
+    path "${multi_sample.sample_name}", type: 'dir', emit: count_list
+    path "${multi_sample.sample_name}", type: 'dir', emit: vdj_list
     path "${multi_sample.sample_name}_config.csv", emit: multi_config_files
     path "${multi_sample.sample_name}.html", emit: summary_files
     path "${multi_sample.sample_name}_contig_annotations.csv", emit: tcr_file
@@ -132,12 +135,12 @@ process cellrangerMulti {
   def memory = "$task.memory" =~  /\d+/
   def sample = "$multi_sample.sample_name"
   """
-  cellranger multi --id=${sample} --csv=$multi_sample.config_file --localcores 6 --localmem 100 1> ${sample}_cellranger.log  2>&1
+  cellranger multi --id=${sample} --csv=$multi_sample.config_file  --localcores 12 --localmem 300 1> ${sample}_cellranger.log  2>&1
   cp -r ${sample}/outs/per_sample_outs/${sample}/count Counts
-  tar -czf ${sample}_counts.tar.gz ./Counts/*
+  #tar -czf ${sample}_counts.tar.gz ./Counts/*
   mkdir VDJ
   cp -r ${sample}/outs/per_sample_outs/${sample}/vdj_*/* VDJ/
-  tar -czf ${sample}_vdj.tar.gz ./VDJ/*
+  #tar -czf ${sample}_vdj.tar.gz ./VDJ/*
   cp ${sample}/outs/per_sample_outs/${sample}/web_summary.html ${sample}.html 
   cp ${sample}/outs/per_sample_outs/${sample}/vdj_t/filtered_contig_annotations.csv ${sample}_contig_annotations.csv
   cp ${sample}/outs/per_sample_outs/${sample}/vdj_t/airr_rearrangement.tsv ${sample}_airr.tsv

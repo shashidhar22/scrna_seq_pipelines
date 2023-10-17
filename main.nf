@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 include {runCellranger ; prepCellranger ; cellrangerMulti} from './cellranger'
 include {seuratRead10X ; seuratMergeH5Obj} from './seurat'
-include {preProcess10XGEX} from './preprocess'
+include {preProcess10XGEX ; convertFormats ; integrateTCRs} from './preprocess'
 
 workflow CellRangerMulti {
   metadata = Channel.fromPath(params.input.metadata)
@@ -15,8 +15,19 @@ workflow CellRangerMulti {
     prepCellranger(metadata.collect{"$it"}, gex_reference, vdj_reference, fastq_paths.collect{"$it"}, study_id, script_path)
     cellrangerMulti(prepCellranger.out.config_files, prepCellranger.out.multi_config.splitCsv(header: true, quote: '\"', sep: '\t'), gex_reference, vdj_reference, fastq_paths.collect{"$it"}, script_path)
     preProcess10XGEX(cellrangerMulti.out.count_list, script_path, mode)
+    convertFormats(preProcess10XGEX.out.singlecell_object)
+    integrateTCRs(convertFormats.out.singlecell_object, 
+      cellrangerMulti.out.tcr_file.toSortedList())
+    //seuratMergeH5Obj(preProcess10XGEX.out.singlecell_object.toSortedList(), study_id, script_path)
 }
 
+
+workflow IntegrateTCRs {
+  seurat_path = Channel.fromPath(params.input.seurat_paths)
+  vdj_path = Channel.fromPath(params.input.vdj_paths)
+  main:
+    integrateTCRs(seurat_path, vdj_path.toSortedList())
+}
 workflow PreprocessSCDataset {
   count_list = Channel.fromPath(params.input.count_list)
   script_path = Channel.fromPath(params.input.script_path)

@@ -32,7 +32,9 @@ if (str_detect(parser$count_path, "h5Seurat")) {
     sc_object <- LoadH5Seurat(parser$count_path) 
     sc_object <- Seurat::as.SingleCellExperiment(sc_object)
 } else {
-    matrix_path <- base::paste(parser$count_path, "/sample_filtered_feature_bc_matrix", sep = "")
+    matrix_path <- base::paste(parser$count_path, 
+        "/outs/per_sample_outs/", parser$sample_name, 
+        "/count/sample_filtered_feature_bc_matrix", sep = "")
     sc_object <- DropletUtils::read10xCounts(matrix_path)
     sc_object$Sample <- parser$sample_name
 }
@@ -172,7 +174,7 @@ sc_object <- scran::computeSumFactors(sc_object, cluster = cluster_object,
     min.mean = 0.1)
 sc_object <- scuttle::logNormCounts(sc_object)
 top_variation <- scran::getTopHVGs(sc_object, n = 2000)
-sc_object <- scran::fixedPCA(sc_object, subset.row = top_variation)
+sc_object <- scran::fixedPCA(sc_object, subset.row = top_variation, rank = 100)
 set.seed(12357)
 sc_object <- scater::runTSNE(sc_object, dimred = "PCA")
 sc_clusters <- clusterCells(sc_object, use.dimred="PCA", full=TRUE)
@@ -216,14 +218,15 @@ if (length(unique(sc_clusters$clusters)) > 2) {
 if ("Barcode" %in% colnames(colData(sc_object))) {
     colnames(sc_object) <- sc_object$Barcode
 } 
+sce_object_path <- paste(parser$sample_name, ".rda", sep = "")
 
-
-seurat_object <- as.Seurat(sc_object)
+save(sc_object, file = sce_object_path)
+#seurat_object <- as.Seurat(sc_object)
 # Set feature metadata, AKA rowData. Super intuitive, right?
-try(seurat_object[["RNA"]][[]] <- as.data.frame(rowData(sc_object)), silent = TRUE)
-Idents(seurat_object) <- parser$sample_name
-seurat_object$ident <- parser$sample_name
-seurat_object <- seurat_object %>% 
-    subset(subset = outlier == FALSE)
-seurat_object_path <- paste(parser$sample_name, ".h5Seurat", sep = "")
-SeuratDisk::SaveH5Seurat(seurat_object, seurat_object_path, overwrite=TRUE)
+#try(seurat_object[["RNA"]][[]] <- as.data.frame(rowData(sc_object)), silent = TRUE)
+#Idents(seurat_object) <- parser$sample_name
+#seurat_object$ident <- parser$sample_name
+#seurat_object <- seurat_object %>% 
+#    subset(subset = outlier == FALSE)
+#seurat_object_path <- paste(parser$sample_name, ".h5Seurat", sep = "")
+#SeuratDisk::SaveH5Seurat(seurat_object, seurat_object_path, overwrite=TRUE)

@@ -1,0 +1,62 @@
+%%metro title: KSTME scRNA-seq + VDJ Pipeline
+%%metro style: light
+%%metro line: main | Main Pipeline | #2B8A3E
+%%metro line: tcell | T cell & VDJ | #862E9C
+%%metro line: de | DE & Downstream | #C92A2A
+%%metro file: input | FASTQ + Metadata
+%%metro file: trajectory | .h5ad
+%%metro file: results | .csv + Plots
+%%metro legend: bottom
+
+graph LR
+    subgraph preprocessing [Pre-processing]
+        %%metro exit: right | main,tcell,de
+
+        input([Input FASTQ])
+        cr_config([CR Config])
+        cellranger([Cell Ranger])
+        cellbender([CellBender])
+        qc_scrublet([QC + Scrublet])
+
+        input -->|main,tcell,de| cr_config
+        cr_config -->|main,tcell,de| cellranger
+        cellranger -->|main,tcell,de| cellbender
+        cellbender -->|main,tcell,de| qc_scrublet
+    end
+
+    subgraph integration [Integration & Annotation]
+        %%metro entry: left | main,tcell,de
+        %%metro exit: right | tcell,de
+
+        merge_scvi([Merge + scVI])
+        celltypist([CellTypist])
+
+        merge_scvi -->|main,tcell,de| celltypist
+    end
+
+    subgraph tcell_analysis [T cell & VDJ Analysis]
+        %%metro entry: left | tcell
+
+        tcell_subcluster([T cell Subcluster])
+        vdj_integration([VDJ Integration])
+        trajectory([Trajectory])
+
+        tcell_subcluster -->|tcell| vdj_integration
+        vdj_integration -->|tcell| trajectory
+    end
+
+    subgraph de_analysis [DE & Cell Proportions]
+        %%metro entry: left | de
+
+        pseudobulk_de([Pseudobulk DE])
+        cell_proportions([Cell Proportions])
+        results([Results])
+
+        pseudobulk_de -->|de| cell_proportions
+        cell_proportions -->|de| results
+    end
+
+    %% Inter-section edges
+    qc_scrublet -->|main,tcell,de| merge_scvi
+    celltypist -->|tcell| tcell_subcluster
+    celltypist -->|de| pseudobulk_de

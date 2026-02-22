@@ -370,7 +370,7 @@ python pipeline/08_trajectory.py --arm primary
 
 1. **Conda environment:**
    ```bash
-   conda env create -f pipeline/environment.yml
+   mamba env create -f environment.yml
    conda activate scrna_pipeline
    ```
 

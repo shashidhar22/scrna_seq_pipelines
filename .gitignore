@@ -2,3 +2,4 @@
 params
 #Ignore nextflow logs
 .nextflow*
+.venv

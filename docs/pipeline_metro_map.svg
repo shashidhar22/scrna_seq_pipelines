@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720" width="1440" height="720" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <!-- Track colors -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fafafa"/>
+      <stop offset="100%" style="stop-color:#f0f0f0"/>
+    </linearGradient>
+    <!-- GPU badge gradient -->
+    <linearGradient id="gpuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff9500"/>
+      <stop offset="100%" style="stop-color:#ff6b00"/>
+    </linearGradient>
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
+    <filter id="stationShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1440" height="720" fill="url(#bgGrad)" rx="8"/>
+
+  <!-- Title -->
+  <text x="720" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#1a1a2e" letter-spacing="0.5">
+    KSTME scRNA-seq + VDJ Pipeline
+  </text>
+  <text x="720" y="62" text-anchor="middle" font-size="12" fill="#666" letter-spacing="0.3">
+    HIV / Kaposi Sarcoma Study &#x2014; 5&#x2032; 10x Chromium &#x2014; 50 GEX + 50 VDJ libraries
+  </text>
+
+  <!-- ========== -->
+  <!-- STAGE HEADERS (rounded pill badges along the top)            -->
+  <!-- ========== -->
+  <g id="stage-headers">
+    <!-- Pre-processing -->
+    <rect x="55" y="78" width="140" height="22" rx="11" fill="#3B7DD8" opacity="0.9"/>
+    <text x="125" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">1. Pre-processing</text>
+    <!-- Ambient removal -->
+    <rect x="260" y="78" width="140" height="22" rx="11" fill="#E8590C" opacity="0.9"/>
+    <text x="330" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">2. Ambient Removal</text>
+    <!-- QC -->
+    <rect x="440" y="78" width="100" height="22" rx="11" fill="#D6336C" opacity="0.9"/>
+    <text x="490" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">3. QC Filtering</text>
+    <!-- Integration -->
+    <rect x="595" y="78" width="125" height="22" rx="11" fill="#2B8A3E" opacity="0.9"/>
+    <text x="657" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">4. Integration</text>
+    <!-- Annotation -->
+    <rect x="775" y="78" width="110" height="22" rx="11" fill="#5F3DC4" opacity="0.9"/>
+    <text x="830" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">5. Annotation</text>
+    <!-- T cell / VDJ -->
+    <rect x="945" y="78" width="140" height="22" rx="11" fill="#862E9C" opacity="0.9"/>
+    <text x="1015" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">6. T cell &amp; VDJ</text>
+    <!-- DE / Trajectory -->
+    <rect x="1145" y="78" width="150" height="22" rx="11" fill="#C92A2A" opacity="0.9"/>
+    <text x="1220" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">7. DE &amp; Trajectory</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- TRACK LINES                                                  -->
+  <!-- ========== -->
+
+  <!--Main preprocessing track (blue) -->
+  <path d="M 75,170  L 490,170"
+        stroke="#3B7DD8" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!--Ambient + QC track (orange-red) -->
+  <path d="M 490,170  L 630,170"
+        stroke="#E8590C" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!--Integration track (green) -->
+  <path d="M 630,170  L 830,170"
+        stroke="#2B8A3E" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!--Annotation track (purple) -->
+  <path d="M 830,170  L 920,170"
+        stroke="#5F3DC4" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!--Three-arm split at Merge (small parallel segments) -->
+  <!-- Primary arm (main line, continues) -->
+  <rect x="650" y="195" width="60" height="16" rx="8" fill="#2B8A3E" opacity="0.15"/>
+  <text x="680" y="206" text-anchor="middle" font-size="8" fill="#2B8A3E" font-weight="600">Primary</text>
+  <!-- Focused arm -->
+  <rect x="650" y="214" width="60" height="16" rx="8" fill="#2B8A3E" opacity="0.15"/>
+  <text x="680" y="225" text-anchor="middle" font-size="8" fill="#2B8A3E" font-weight="600">Focused</text>
+  <!-- Validation arm -->
+  <rect x="650" y="233" width="60" height="16" rx="8" fill="#2B8A3E" opacity="0.15"/>
+  <text x="680" y="244" text-anchor="middle" font-size="8" fill="#2B8A3E" font-weight="600">Validation</text>
+  <!-- Arm bracket -->
+  <path d="M 643,200 C 638,200 638,248 643,248" stroke="#2B8A3E" stroke-width="1.5" fill="none" opacity="0.5"/>
+
+  <!--Fork from Annotation → T cell branch (purple, curves down) -->
+  <path d="M 920,170  C 950,170 960,180 970,210  C 980,240 990,280 1000,290  L 1350,290"
+        stroke="#862E9C" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!--Fork from Annotation → DE branch (red, curves down further) -->
+  <path d="M 920,170  C 950,170 960,200 980,260  C 1000,320 1010,400 1030,420  L 1350,420"
+        stroke="#C92A2A" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!-- ========== -->
+  <!-- STATIONS (white circles with colored borders)                -->
+  <!-- ========== -->
+  <g id="stations" filter="url(#stationShadow)">
+    <!--Main track stations -->
+    <!-- Input -->
+    <circle cx="75" cy="170" r="9" fill="#fff" stroke="#3B7DD8" stroke-width="3"/>
+    <!-- Cell Ranger Config (Phase 0) -->
+    <circle cx="195" cy="170" r="9" fill="#fff" stroke="#3B7DD8" stroke-width="3"/>
+    <!-- Cell Ranger Multi (external) -->
+    <circle cx="330" cy="170" r="9" fill="#fff" stroke="#3B7DD8" stroke-width="3"/>
+    <!-- CellBender (Phase 1) -->
+    <circle cx="490" cy="170" r="9" fill="#fff" stroke="#E8590C" stroke-width="3"/>
+    <!-- QC + Scrublet (Phase 2) -->
+    <circle cx="630" cy="170" r="9" fill="#fff" stroke="#E8590C" stroke-width="3"/>
+    <!-- Merge + scVI (Phase 3) -->
+    <circle cx="730" cy="170" r="9" fill="#fff" stroke="#2B8A3E" stroke-width="3"/>
+    <!-- CellTypist Annotate (Phase 4) -->
+    <circle cx="830" cy="170" r="9" fill="#fff" stroke="#5F3DC4" stroke-width="3"/>
+    <!-- Fork junction -->
+    <circle cx="920" cy="170" r="6" fill="#5F3DC4" stroke="#fff" stroke-width="2"/>
+
+    <!--T cell / VDJ track stations -->
+    <!-- T cell Subcluster (Phase 5) -->
+    <circle cx="1060" cy="290" r="9" fill="#fff" stroke="#862E9C" stroke-width="3"/>
+    <!-- VDJ Integration (Phase 6) -->
+    <circle cx="1190" cy="290" r="9" fill="#fff" stroke="#862E9C" stroke-width="3"/>
+    <!-- Trajectory (Phase 8) -->
+    <circle cx="1320" cy="290" r="9" fill="#fff" stroke="#862E9C" stroke-width="3"/>
+
+    <!--DE track stations -->
+    <!-- Pseudobulk DE (Phase 7) -->
+    <circle cx="1100" cy="420" r="9" fill="#fff" stroke="#C92A2A" stroke-width="3"/>
+    <!-- Cell Proportions -->
+    <circle cx="1230" cy="420" r="9" fill="#fff" stroke="#C92A2A" stroke-width="3"/>
+    <!-- Results -->
+    <circle cx="1340" cy="420" r="9" fill="#fff" stroke="#C92A2A" stroke-width="3"/>
+  </g>
+
+  <!-- ========== -->
+  <!-- STATION LABELS                                               -->
+  <!-- ========== -->
+  <g id="labels" font-size="11" font-weight="600">
+    <!-- Main track -->
+    <text x="75" y="148" text-anchor="middle" fill="#3B7DD8">Input</text>
+    <text x="75" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">FASTQ + metadata</text>
+
+    <text x="195" y="148" text-anchor="middle" fill="#3B7DD8">CR Config</text>
+    <text x="195" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 0</text>
+
+    <text x="330" y="148" text-anchor="middle" fill="#3B7DD8">Cell Ranger</text>
+    <text x="330" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">multi (external)</text>
+
+    <text x="490" y="148" text-anchor="middle" fill="#E8590C">CellBender</text>
+    <text x="490" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 1</text>
+
+    <text x="630" y="148" text-anchor="middle" fill="#E8590C">QC + Scrublet</text>
+    <text x="630" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 2</text>
+
+    <text x="730" y="148" text-anchor="middle" fill="#2B8A3E">Merge + scVI</text>
+    <text x="730" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 3</text>
+
+    <text x="830" y="148" text-anchor="middle" fill="#5F3DC4">CellTypist</text>
+    <text x="830" y="160" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 4</text>
+
+    <!-- T cell track -->
+    <text x="1060" y="270" text-anchor="middle" fill="#862E9C">T cell Subcluster</text>
+    <text x="1060" y="282" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 5</text>
+
+    <text x="1190" y="270" text-anchor="middle" fill="#862E9C">VDJ Integration</text>
+    <text x="1190" y="282" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 6</text>
+
+    <text x="1320" y="270" text-anchor="middle" fill="#862E9C">Trajectory</text>
+    <text x="1320" y="282" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 8</text>
+
+    <!-- DE track -->
+    <text x="1100" y="400" text-anchor="middle" fill="#C92A2A">Pseudobulk DE</text>
+    <text x="1100" y="412" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Phase 7</text>
+
+    <text x="1230" y="400" text-anchor="middle" fill="#C92A2A">Cell Proportions</text>
+    <text x="1230" y="412" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Mann-Whitney U</text>
+
+    <text x="1340" y="400" text-anchor="middle" fill="#C92A2A">Results</text>
+    <text x="1340" y="412" text-anchor="middle" font-size="8.5" fill="#888" font-weight="400">Volcano + CSV</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- TOOL/METHOD ANNOTATIONS (below stations)                     -->
+  <!-- ========== -->
+  <g id="annotations" font-size="8" fill="#555">
+    <!-- Phase 0 -->
+    <rect x="159" y="187" width="72" height="16" rx="4" fill="#3B7DD8" opacity="0.08"/>
+    <text x="195" y="198" text-anchor="middle" fill="#3B7DD8">FASTQ pairing</text>
+
+    <!-- Cell Ranger -->
+    <rect x="293" y="187" width="74" height="16" rx="4" fill="#3B7DD8" opacity="0.08"/>
+    <text x="330" y="198" text-anchor="middle" fill="#3B7DD8">GEX + VDJ-T</text>
+
+    <!-- CellBender -->
+    <rect x="449" y="187" width="82" height="16" rx="4" fill="#E8590C" opacity="0.08"/>
+    <text x="490" y="198" text-anchor="middle" fill="#E8590C">SoupX fallback</text>
+
+    <!-- QC -->
+    <rect x="590" y="187" width="80" height="16" rx="4" fill="#E8590C" opacity="0.08"/>
+    <text x="630" y="198" text-anchor="middle" fill="#E8590C">MAD 3&#xD7; adaptive</text>
+
+    <!-- Integration -->
+    <rect x="690" y="187" width="80" height="16" rx="4" fill="#2B8A3E" opacity="0.08"/>
+    <text x="730" y="198" text-anchor="middle" fill="#2B8A3E">Harmony fallback</text>
+
+    <!-- Annotation -->
+    <rect x="789" y="187" width="82" height="16" rx="4" fill="#5F3DC4" opacity="0.08"/>
+    <text x="830" y="198" text-anchor="middle" fill="#5F3DC4">Immune_All_Low</text>
+
+    <!-- T cell subcluster -->
+    <rect x="1018" y="305" width="84" height="16" rx="4" fill="#862E9C" opacity="0.08"/>
+    <text x="1060" y="316" text-anchor="middle" fill="#862E9C">re-scVI + markers</text>
+
+    <!-- VDJ -->
+    <rect x="1152" y="305" width="76" height="16" rx="4" fill="#862E9C" opacity="0.08"/>
+    <text x="1190" y="316" text-anchor="middle" fill="#862E9C">scirpy CDR3&#x3B1;&#x3B2;</text>
+
+    <!-- Trajectory -->
+    <rect x="1282" y="305" width="76" height="16" rx="4" fill="#862E9C" opacity="0.08"/>
+    <text x="1320" y="316" text-anchor="middle" fill="#862E9C">PAGA + DPT</text>
+
+    <!-- DE -->
+    <rect x="1060" y="435" width="80" height="16" rx="4" fill="#C92A2A" opacity="0.08"/>
+    <text x="1100" y="446" text-anchor="middle" fill="#C92A2A">PyDESeq2</text>
+
+    <!-- Proportions -->
+    <rect x="1193" y="435" width="74" height="16" rx="4" fill="#C92A2A" opacity="0.08"/>
+    <text x="1230" y="446" text-anchor="middle" fill="#C92A2A">FDR-corrected</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- GPU BADGES                                                   -->
+  <!-- ========== -->
+  <g id="gpu-badges">
+    <!-- CellBender GPU -->
+    <rect x="510" y="164" width="30" height="13" rx="6.5" fill="url(#gpuGrad)"/>
+    <text x="525" y="174" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff">GPU</text>
+    <!-- scVI GPU -->
+    <rect x="750" y="164" width="30" height="13" rx="6.5" fill="url(#gpuGrad)"/>
+    <text x="765" y="174" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff">GPU</text>
+    <!-- T cell scVI GPU -->
+    <rect x="1080" y="284" width="30" height="13" rx="6.5" fill="url(#gpuGrad)"/>
+    <text x="1095" y="294" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff">GPU</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- OUTPUT FORMAT BADGES (small rounded rects)                   -->
+  <!-- ========== -->
+  <g id="output-badges" font-size="7" font-weight="600">
+    <!-- After QC -->
+    <rect x="629" y="210" width="36" height="12" rx="6" fill="#E8590C" opacity="0.12"/>
+    <text x="647" y="219" text-anchor="middle" fill="#E8590C">.h5ad</text>
+    <!-- After Integration -->
+    <rect x="718" y="210" width="52" height="12" rx="6" fill="#2B8A3E" opacity="0.12"/>
+    <text x="744" y="219" text-anchor="middle" fill="#2B8A3E">.h5ad + model</text>
+    <!-- After VDJ -->
+    <rect x="1170" y="326" width="40" height="12" rx="6" fill="#862E9C" opacity="0.12"/>
+    <text x="1190" y="335" text-anchor="middle" fill="#862E9C">.h5ad</text>
+    <!-- After DE -->
+    <rect x="1086" y="456" width="28" height="12" rx="6" fill="#C92A2A" opacity="0.12"/>
+    <text x="1100" y="465" text-anchor="middle" fill="#C92A2A">.csv</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- DETAIL CARDS (key info per phase)                            -->
+  <!-- ========== -->
+  <g id="detail-cards" filter="url(#shadow)">
+    <!-- Phase 1 card -->
+    <rect x="427" y="485" width="160" height="100" rx="8" fill="#fff" stroke="#E8590C" stroke-width="1" opacity="0.9"/>
+    <text x="507" y="503" text-anchor="middle" font-size="10" font-weight="700" fill="#E8590C">Phase 1-2: Per-Library</text>
+    <text x="437" y="518" font-size="8.5" fill="#444">&#x2022; CellBender FPR = 0.01</text>
+    <text x="437" y="531" font-size="8.5" fill="#444">&#x2022; SoupX fallback if no converge</text>
+    <text x="437" y="544" font-size="8.5" fill="#444">&#x2022; MAD 3&#xD7; adaptive per-library</text>
+    <text x="437" y="557" font-size="8.5" fill="#444">&#x2022; Scrublet doublet detection</text>
+    <text x="437" y="570" font-size="8.5" fill="#444">&#x2022; MT/ribo/HB gene flagging</text>
+
+    <!-- Phase 3 card -->
+    <rect x="630" y="485" width="160" height="100" rx="8" fill="#fff" stroke="#2B8A3E" stroke-width="1" opacity="0.9"/>
+    <text x="710" y="503" text-anchor="middle" font-size="10" font-weight="700" fill="#2B8A3E">Phase 3-4: Integration</text>
+    <text x="640" y="518" font-size="8.5" fill="#444">&#x2022; 4000 HVGs (seurat_v3)</text>
+    <text x="640" y="531" font-size="8.5" fill="#444">&#x2022; scVI: n_latent=30, batch=Batch</text>
+    <text x="640" y="544" font-size="8.5" fill="#444">&#x2022; Leiden 0.3 / 0.5 / 0.8 / 1.0 / 1.5</text>
+    <text x="640" y="557" font-size="8.5" fill="#444">&#x2022; CellTypist Immune_All_Low</text>
+    <text x="640" y="570" font-size="8.5" fill="#444">&#x2022; Coarse + fine labels</text>
+
+    <!-- Phase 5-6 card -->
+    <rect x="833" y="485" width="160" height="100" rx="8" fill="#fff" stroke="#862E9C" stroke-width="1" opacity="0.9"/>
+    <text x="913" y="503" text-anchor="middle" font-size="10" font-weight="700" fill="#862E9C">Phase 5-6: T cell + VDJ</text>
+    <text x="843" y="518" font-size="8.5" fill="#444">&#x2022; CD4/CD8 T subset re-scVI</text>
+    <text x="843" y="531" font-size="8.5" fill="#444">&#x2022; Marker-based subtyping</text>
+    <text x="843" y="544" font-size="8.5" fill="#444">&#x2022; scirpy CDR3&#x3B1;+&#x3B2; clonotypes</text>
+    <text x="843" y="557" font-size="8.5" fill="#444">&#x2022; Shannon / Simpson diversity</text>
+    <text x="843" y="570" font-size="8.5" fill="#444">&#x2022; Multi-TRB doublet flagging</text>
+
+    <!-- Phase 7-8 card -->
+    <rect x="1036" y="485" width="160" height="100" rx="8" fill="#fff" stroke="#C92A2A" stroke-width="1" opacity="0.9"/>
+    <text x="1116" y="503" text-anchor="middle" font-size="10" font-weight="700" fill="#C92A2A">Phase 7-8: DE + Trajectory</text>
+    <text x="1046" y="518" font-size="8.5" fill="#444">&#x2022; Pseudobulk per patient/CT</text>
+    <text x="1046" y="531" font-size="8.5" fill="#444">&#x2022; PyDESeq2: HIV+ vs HIV&#x2212;</text>
+    <text x="1046" y="544" font-size="8.5" fill="#444">&#x2022; Cell proportion testing</text>
+    <text x="1046" y="557" font-size="8.5" fill="#444">&#x2022; PAGA + diffusion pseudotime</text>
+    <text x="1046" y="570" font-size="8.5" fill="#444">&#x2022; Clonotype trajectory tracking</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- LEGEND                                                       -->
+  <!-- ========== -->
+  <g id="legend" transform="translate(50, 485)">
+    <rect x="0" y="0" width="340" height="105" rx="8" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="15" y="20" font-size="11" font-weight="700" fill="#333">Legend</text>
+
+    <!-- Pre-processing -->
+    <line x1="15" y1="35" x2="40" y2="35" stroke="#3B7DD8" stroke-width="4" stroke-linecap="round"/>
+    <text x="48" y="39" font-size="9" fill="#444">Pre-processing (Cell Ranger + config)</text>
+    <!-- Ambient/QC -->
+    <line x1="15" y1="52" x2="40" y2="52" stroke="#E8590C" stroke-width="4" stroke-linecap="round"/>
+    <text x="48" y="56" font-size="9" fill="#444">Ambient RNA removal + QC filtering</text>
+    <!-- Integration -->
+    <line x1="15" y1="69" x2="40" y2="69" stroke="#2B8A3E" stroke-width="4" stroke-linecap="round"/>
+    <text x="48" y="73" font-size="9" fill="#444">Batch integration (scVI / Harmony)</text>
+    <!-- T cell -->
+    <line x1="185" y1="35" x2="210" y2="35" stroke="#862E9C" stroke-width="4" stroke-linecap="round"/>
+    <text x="218" y="39" font-size="9" fill="#444">T cell + VDJ</text>
+    <!-- DE -->
+    <line x1="185" y1="52" x2="210" y2="52" stroke="#C92A2A" stroke-width="4" stroke-linecap="round"/>
+    <text x="218" y="56" font-size="9" fill="#444">Differential expression</text>
+    <!-- Annotation -->
+    <line x1="185" y1="69" x2="210" y2="69" stroke="#5F3DC4" stroke-width="4" stroke-linecap="round"/>
+    <text x="218" y="73" font-size="9" fill="#444">Cell type annotation</text>
+    <!-- GPU badge -->
+    <rect x="15" y="82" width="30" height="13" rx="6.5" fill="url(#gpuGrad)"/>
+    <text x="30" y="92" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff">GPU</text>
+    <text x="52" y="92" font-size="9" fill="#444">Cloud GPU required</text>
+    <!-- Station -->
+    <circle cx="200" cy="89" r="6" fill="#fff" stroke="#555" stroke-width="2"/>
+    <text x="213" y="92" font-size="9" fill="#444">Processing step</text>
+  </g>
+
+  <!-- ========== -->
+  <!-- CONNECTING DASHED LINES (detail cards to stations)           -->
+  <!-- ========== -->
+  <g stroke="#ccc" stroke-width="0.8" stroke-dasharray="3,3" fill="none">
+    <path d="M 507,485 L 507,210"/>
+    <path d="M 710,485 L 730,260"/>
+    <path d="M 913,485 L 1060,330"/>
+    <path d="M 1116,485 L 1100,460"/>
+  </g>
+
+  <!-- ========== -->
+  <!-- THREE-ARM ANALYSIS CALLOUT                                   -->
+  <!-- ========== -->
+  <g id="arm-callout" transform="translate(55, 260)">
+    <rect x="0" y="0" width="280" height="90" rx="8" fill="#fff" stroke="#2B8A3E" stroke-width="1" stroke-dasharray="4,2" filter="url(#shadow)"/>
+    <text x="15" y="20" font-size="10" font-weight="700" fill="#2B8A3E">Three-Arm Analysis Strategy</text>
+    <text x="15" y="38" font-size="9" fill="#444">
+      <tspan font-weight="600" fill="#2B8A3E">Primary</tspan>
+      <tspan> &#x2014; 43 unsorted GEX (main analyses)</tspan>
+    </text>
+    <text x="15" y="54" font-size="9" fill="#444">
+      <tspan font-weight="600" fill="#2B8A3E">Focused</tspan>
+      <tspan> &#x2014; 7 sorted CD4/CD8 (deep T cell profiling)</tspan>
+    </text>
+    <text x="15" y="70" font-size="9" fill="#444">
+      <tspan font-weight="600" fill="#2B8A3E">Validation</tspan>
+      <tspan> &#x2014; Patients with both (cross-validation)</tspan>
+    </text>
+    <text x="15" y="85" font-size="8" fill="#888">Each arm runs Phases 3&#x2013;8 independently</text>
+  </g>
+  <!-- Arrow from callout to merge station -->
+  <path d="M 335,305 C 380,305 420,250 640,200" stroke="#2B8A3E" stroke-width="1" fill="none" stroke-dasharray="3,2" marker-end="none" opacity="0.4"/>
+
+  <!-- ========== -->
+  <!-- DATA FLOW ANNOTATIONS                                        -->
+  <!-- ========== -->
+  <g font-size="7.5" fill="#999">
+    <text x="135" y="185" text-anchor="middle">config CSVs</text>
+    <text x="262" y="185" text-anchor="middle">raw h5</text>
+    <text x="410" y="185" text-anchor="middle">corrected h5ad</text>
+    <text x="560" y="185" text-anchor="middle">filtered h5ad</text>
+    <text x="780" y="185" text-anchor="middle">integrated</text>
+    <text x="875" y="185" text-anchor="middle">annotated</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="720" y="645" text-anchor="middle" font-size="9" fill="#aaa">
+    KSTME scRNA-seq + VDJ Pipeline &#x2022; scanpy / scVI / scirpy / CellTypist / PyDESeq2
+  </text>
+  <text x="720" y="660" text-anchor="middle" font-size="8" fill="#bbb">
+    16 patients &#x2022; 8 sequencing batches &#x2022; HIV+ vs HIV&#x2212; contrast
+  </text>
+</svg>

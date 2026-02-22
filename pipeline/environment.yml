@@ -1,0 +1,28 @@
+name: scrna_pipeline
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - scanpy>=1.10
+  - anndata>=0.10
+  - scvi-tools>=1.1
+  - scirpy>=0.18
+  - celltypist>=1.6
+  - harmonypy>=0.0.9
+  - pydeseq2>=0.4
+  - decoupler>=1.6
+  - leidenalg>=0.10
+  - scib>=1.1
+  - scrublet>=0.2.3
+  - matplotlib>=3.8
+  - seaborn>=0.13
+  - pandas>=2.1
+  - numpy>=1.26
+  - scipy>=1.12
+  - pyyaml>=6.0
+  - jupyter
+  - jupyterlab
+  - nbformat
+  - pip:
+    - cellbender>=0.3

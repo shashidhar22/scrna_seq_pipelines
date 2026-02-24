@@ -1,0 +1,43 @@
+# =============================================================================
+# CPU Docker image for scRNA-seq pipeline (Phases 00, 02, 04, 06, 07, 08)
+# Includes: Python 3.11, scanpy stack, Cell Ranger 8.0.1, AWS CLI
+# Reference genomes baked in to avoid repeated S3 downloads (~20 GB each)
+# =============================================================================
+FROM python:3.11-slim AS base
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        unzip \
+        procps \
+        libhdf5-dev \
+        libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# AWS CLI v2
+RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscli.zip \
+    && unzip -q /tmp/awscli.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/awscli.zip /tmp/aws
+
+# Cell Ranger 8.0.1 (proprietary — user must supply the tarball at build time)
+# Download from: https://www.10xgenomics.com/support/software/cell-ranger/downloads
+COPY cellranger-8.0.1.tar.gz /opt/
+RUN tar -xzf /opt/cellranger-8.0.1.tar.gz -C /opt/ \
+    && rm /opt/cellranger-8.0.1.tar.gz
+ENV PATH="/opt/cellranger-8.0.1:${PATH}"
+
+# Reference genomes (baked in to avoid 50x redundant S3 stage-ins for Phase 00)
+# These must be present in the Docker build context:
+#   refdata-gex-GRCh38-2024-A/          (~20 GB)
+#   refdata-cellranger-vdj-GRCh38/      (~5 GB)
+COPY refdata-gex-GRCh38-2024-A /opt/references/refdata-gex-GRCh38-2024-A
+COPY refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0 /opt/references/refdata-cellranger-vdj-GRCh38
+
+# Python dependencies (CPU-only — no torch, cellbender, scvi-tools)
+COPY requirements_cpu.txt /app/
+RUN pip install --no-cache-dir -r /app/requirements_cpu.txt
+
+# Pipeline code
+COPY pipeline/ /app/pipeline/
+WORKDIR /app

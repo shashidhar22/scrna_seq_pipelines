@@ -1,0 +1,181 @@
+# =============================================================================
+# scRNA-seq + VDJ Pipeline Configuration — AWS Batch
+# HIV/Kaposi Sarcoma Study - 5' 10x Chromium
+#
+# Identical to config.yaml except:
+#   - gex_reference / vdj_reference point to paths baked into the Docker image
+#   - All other paths remain relative (Nextflow stages them into the work dir)
+# =============================================================================
+
+# -- Paths --
+paths:
+  metadata: "data/kstme_sc_metadata.csv"
+  clinical_metadata: "data/KSTME_updated_clinical_metadata.csv"
+  fastq_base: "data/fastq"
+  gex_reference: "/opt/references/refdata-gex-GRCh38-2024-A"
+  vdj_reference: "/opt/references/refdata-cellranger-vdj-GRCh38"
+  cellranger_output: "output/cellranger"
+  cellbender_output: "output/cellbender"
+  qc_output: "output/qc"
+  integration_output: "output/integration"
+  annotation_output: "output/annotation"
+  tcell_output: "output/tcell"
+  vdj_output: "output/vdj"
+  de_output: "output/differential_expression"
+  trajectory_output: "output/trajectory"
+  figures: "output/figures"
+  models: "output/models"
+
+# -- Study Design --
+study:
+  study_id: "KSTME"
+  expected_cells: 3000
+  chemistry: "auto"  # 5' SC5P-R2, let Cell Ranger auto-detect
+
+  # Batches with known issues
+  missing_batch: "AAAMMK2M5"  # FASTQs likely in HVFNLDRXX (re-sequencing)
+  resequenced_samples:
+    - sample: "008_216_V09"
+      batches: ["HVFNLDRXX", "AAAMMK2M5"]
+    - sample: "008_217_scREP_H"
+      batches: ["HVFNLDRXX", "AAAMMK2M5"]
+    - sample: "008_217_V09"
+      batches: ["HVFNLDRXX", "AAAMMK2M5"]
+    - sample: "008_218_scREP_J"
+      batches: ["HVFNLDRXX", "AAAMMK2M5"]
+
+  # HIV status correction: patient 008_252 VDJ row mislabeled as "positive"
+  hiv_status_overrides:
+    "008_252": "negative"
+
+  # Three-arm analysis strategy
+  analysis_arms:
+    primary:
+      description: "Unsorted samples only (main analyses)"
+      sorting_filter: ["Unsorted"]
+    focused:
+      description: "Sorted T cell samples (deep T cell profiling)"
+      sorting_filter: ["CD4pTCells", "CD8pTCells"]
+    validation:
+      description: "Patients with both sorted and unsorted"
+      patients: ["008_216", "008_217", "008_220"]
+
+# -- Phase 1: CellBender --
+cellbender:
+  fpr: 0.01                    # Conservative for rare immune cells
+  total_droplets_included: 20000
+  epochs: 150
+  learning_rate: 1.0e-4
+  # Increase to 300 if training loss hasn't converged:
+  max_epochs_fallback: 300
+  # Convergence check: if final ELBO > threshold, flag for SoupX fallback
+  convergence_check: true
+
+# -- Phase 2: QC Filtering --
+qc:
+  # MAD-based adaptive thresholds (applied per-library)
+  mad_threshold: 3
+  # Hard ceiling for hemoglobin (should be ~0 in PBMCs)
+  max_pct_hb: 5.0
+  # Gene-level filtering
+  min_cells_per_gene: 3
+  # Scrublet doublet detection
+  expected_doublet_rate: 0.046  # Conservative for ~3K cell loading
+  # Minimum cells to retain a library
+  min_cells_per_library: 200
+
+# -- Phase 3: Integration --
+integration:
+  # HVG selection
+  n_top_genes: 4000
+  hvg_flavor: "seurat_v3"
+  # scVI parameters
+  scvi:
+    batch_key: "Batch"            # Sequencing batch only
+    n_latent: 30
+    n_layers: 2
+    max_epochs: 400
+    early_stopping: true
+    continuous_covariates: ["pct_counts_mt"]
+  # Harmony fallback
+  harmony:
+    n_pcs: 50
+    batch_key: "Batch"
+  # Neighbor graph
+  n_neighbors: 30
+  # Clustering resolutions to test
+  leiden_resolutions: [0.3, 0.5, 0.8, 1.0, 1.5]
+  default_resolution: 0.8
+  # UMAP
+  umap_min_dist: 0.3
+
+# -- Phase 4: Annotation --
+annotation:
+  celltypist_models:
+    - "Immune_All_Low.pkl"    # Fine-grained (primary)
+    - "Immune_All_High.pkl"   # Coarse (validation)
+  majority_voting: true
+  # Canonical markers for validation
+  markers:
+    T_cells: ["CD3D", "CD3E"]
+    CD4_T: ["CD4", "IL7R"]
+    CD8_T: ["CD8A", "CD8B"]
+    NK: ["NKG7", "GNLY", "KLRD1"]
+    B_cells: ["CD19", "MS4A1", "CD79A"]
+    Monocytes: ["CD14", "LYZ", "FCGR3A"]
+    DCs: ["FCER1A", "CLEC10A", "IRF7"]
+    Platelets: ["PPBP", "PF4"]
+
+# -- Phase 5: T Cell Subclustering --
+tcell:
+  n_top_genes: 3000
+  scvi:
+    n_latent: 20
+    max_epochs: 300
+    batch_key: "Batch"
+  n_neighbors: 20
+  resolution: 1.0
+  # Key subtypes and markers
+  cd8_markers:
+    Naive: ["CCR7", "SELL", "LEF1"]
+    Effector: ["GZMB", "PRF1", "GNLY"]
+    Memory: ["IL7R"]
+    Exhausted: ["PDCD1", "LAG3", "HAVCR2", "TOX"]
+    TPEX: ["TCF7", "PDCD1"]
+  cd4_markers:
+    Naive: ["CCR7"]
+    Th1: ["TBX21", "IFNG"]
+    Th2: ["GATA3"]
+    Treg: ["FOXP3", "IL2RA"]
+    Tfh: ["CXCR5", "BCL6"]
+
+# -- Phase 6: VDJ --
+vdj:
+  metric: "identity"
+  sequence: "aa"
+  receptor_arms: "all"
+  dual_ir: "primary_only"
+  expansion_clip_at: 4
+  diversity_metrics: ["shannon", "simpson"]
+
+# -- Phase 7: Differential Expression --
+de:
+  min_cells_per_pseudobulk: 10
+  min_counts_per_pseudobulk: 1000
+  sample_col: "patientID"
+  contrasts:
+    - name: "HIV_status"
+      column: "HIVstatus"
+      reference: "negative"
+      target: "positive"
+
+# -- Phase 8: Trajectory --
+trajectory:
+  n_dcs: 15  # diffusion components
+  root_cell_type: "Naive"  # set root to naive T cells
+
+# -- Compute --
+compute:
+  n_jobs: 4     # parallel jobs for CPU tasks
+  gpu: true     # cloud GPU available
+  random_seed: 42
